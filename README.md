@@ -9,7 +9,7 @@ An open, original AI that puts people first. It is:
 - **For people's growth, not screen time.** It helps with your own goals (health, learning, relationships, purpose, helping others) and never optimises for engagement.
 - **Free forever, owned by no one.** Open licences, peer-to-peer distribution, community governance, and no tokens or paid tiers.
 
-## Status: early prototype (Phase 1, milestone M1)
+## Status: early prototype (Phase 1, milestone M2)
 
 Honestly, today:
 
@@ -18,8 +18,8 @@ Honestly, today:
 | Charter (plain language + machine-readable, kept in sync by tests) | ✅ Draft, awaiting founding maintainer approval |
 | Governance, licences, data policy, docs | ✅ Done |
 | Safety layer: consent gate, kill switch, sandboxed AI process, audit log, integrity checks, our own Charter Rules policy language | ✅ Working and tested with a MOCK AI ([docs/SAFETY_LAYER.md](docs/SAFETY_LAYER.md)) |
-| Tokenizer and data pipeline | ⏳ Next (M2) |
-| Model and training | ⏳ Planned (M3), **no trained model exists yet** |
+| Our own tokenizer (all 312 tested languages round-trip) and a licence-tracking data pipeline | ✅ Working; large data sources not yet verified ([docs/LANGUAGES.md](docs/LANGUAGES.md)) |
+| Model and training | ⏳ Next (M3), **no trained model exists yet** |
 | Safety evaluations and release gate | ⏳ Planned (M4) |
 | Assistant app | ⏳ Planned (M5) |
 | Peer-to-peer distribution and volunteer training | ⏳ Planned (M6) |

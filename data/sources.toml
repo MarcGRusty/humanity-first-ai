@@ -24,6 +24,7 @@ allowed_licences = [
   "Apache-2.0",
   "MIT",
   "BSD-3-Clause",
+  "Unicode-3.0",
   # Corpora where each document carries its own licence. We keep only
   # documents whose own licence is in this list.
   "per-document-open",
@@ -144,6 +145,32 @@ status = "candidate"
 verified = false
 notes = "Recorded human voices in many languages. For a future speech-recognition model built from scratch (Phase 3). Not used in Phase 1."
 
+[[sources]]
+id = "nltk-gutenberg"
+name = "NLTK Project Gutenberg selection (15 public-domain books)"
+url = "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/gutenberg.zip"
+licence = "public-domain"
+uses = ["pretraining"]
+languages = ["en"]
+human_written = true
+ai_text_risk = "none"
+status = "in_use"
+verified = true
+notes = "Used only for the small CPU proof run (M3). About 7 MB of English: Austen, Blake, Carroll, Chesterton, Edgeworth, Melville, Milton, Shakespeare, Whitman. Archive fingerprint pinned in src/hfai/data/sources.py. Left out: Burgess and Bryant (authors died 1965 and 1967, so still in copyright where copyright lasts 70 years after death) and the King James Bible (Crown rights in the UK, and one religion's scripture on its own would skew the data). 17th to 19th century writing: carries the attitudes and biases of its time."
+
+[[sources]]
+id = "unicode-cldr"
+name = "Unicode CLDR locale data (via the Babel package)"
+url = "https://cldr.unicode.org/"
+licence = "Unicode-3.0"
+uses = ["pretraining", "evaluation"]
+languages = ["about 700 locales"]
+human_written = true
+ai_text_risk = "none"
+status = "in_use"
+verified = true
+notes = "Everyday words written by CLDR's human contributors in each language: names of languages, countries, scripts, months and days. Word lists, not running text. Names of languages and territories are used to train tokenizers; names of scripts, months and days are held out to measure language coverage."
+
 # --- Deliberately excluded ------------------------------------------------
 
 [[sources]]
@@ -210,6 +237,19 @@ ai_text_risk = "none"
 status = "excluded"
 verified = false
 reason = "Valuable health and farming knowledge, but the non-commercial (NC) licence is incompatible with the project's open licences. The app may link to these resources; it does not copy them."
+
+[[sources]]
+id = "udhr-translations"
+name = "Universal Declaration of Human Rights translations"
+url = "https://www.ohchr.org/en/human-rights/universal-declaration/universal-declaration-human-rights/about-universal-declaration-human-rights-translation-project"
+licence = "free-distribution-only"
+uses = []
+languages = ["500+"]
+human_written = true
+ai_text_risk = "none"
+status = "excluded"
+verified = false
+reason = "An ideal multilingual test text, but the UN's published terms allow copying for free distribution only, which is narrower than the project's open licences. Revisit if a clearly open licence is confirmed."
 
 [[sources]]
 id = "indigenous-without-consent"

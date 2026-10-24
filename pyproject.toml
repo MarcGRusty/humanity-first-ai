@@ -16,7 +16,9 @@ dependencies = ["cryptography>=42"]
 [project.optional-dependencies]
 # Model training and inference.
 train = ["torch>=2.4", "numpy>=1.26"]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "babel>=2.12"]
+# Unicode CLDR word lists (language coverage), used by the data pipeline.
+data = ["babel>=2.12"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

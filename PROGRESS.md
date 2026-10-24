@@ -4,6 +4,27 @@ Newest session first. Each entry: what was done, what works, what doesn't yet, w
 
 ---
 
+## Session 1 (2026-10-24), continued: M2 tokenizer and data pipeline
+
+### What works (M2)
+- **Our own byte-level BPE tokenizer** (`src/hfai/tokenizer/`), trained from scratch, with no pretrained vocabulary. Every writing system works from day one; special tokens cannot be typed or injected through ordinary text; training is deterministic.
+- **Proof tokenizer** (`artifacts/tokenizer-proof-8k.json`, 8,192 tokens), trained in 18 s on 9.2 MB (public-domain books plus CLDR word lists).
+- **Language coverage measured** on held-out CLDR words: **312 of 312 languages, in 33 writing systems, round-trip exactly (L0)**. Efficiency is poor outside Latin script, as expected from mostly-English training text ([report](docs/coverage/tokenizer-proof-8k.md)).
+- **Data pipeline** (`src/hfai/data/`): sources must be listed and allowed in `data/sources.toml`; licence check per document; heuristic filters for chatbot-written text and personal information; deduplication; deterministic validation split; a report of every kept and dropped document.
+- **Proof training data built**: 2.0M training tokens and 63k validation tokens from 15 public-domain books (archive fingerprint pinned).
+- New sources recorded: `nltk-gutenberg` and `unicode-cldr` (in use, verified); UDHR translations excluded (free-distribution-only terms).
+- Tests: tokenizer round-trips on 19 hand-picked strings and 2,000 random strings across many scripts; data rules; a test caught (and I fixed) overlap between CLDR training and evaluation words.
+
+### What doesn't work yet
+- **Large sources unverified.** Hugging Face is blocked here, so Common Pile, Common Corpus and Wikipedia adapters are written but marked UNVERIFIED. They fail closed and will be checked on the first Kaggle run.
+- The proof tokenizer is English-heavy; a multilingual tokenizer needs the real sources.
+- Pure-Python encoding speed (seconds per few MB) is fine for the proof, but is too slow to tokenize gigabytes quickly. To be measured on Kaggle; it may need multiprocessing.
+
+### Cost
+- Tokenizer training: 18 s CPU. Building proof shards: about 4 s. Energy: negligible.
+
+---
+
 ## Session 1 (2026-10-24), continued: M1 safety layer
 
 ### What works (M1)
