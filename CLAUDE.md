@@ -30,7 +30,9 @@ You are helping build **Humanity-First AI** (working name): an original AI built
 - The AI can reason freely but **cannot act without explicit human consent** (hard limit H1). Never add a code path that skips the consent gate, even "for testing" in production code.
 - Changes to `charter/`, `CHARTER.md`, `src/hfai/charter.py`, `src/hfai/guardian/`, `src/hfai/rules/`, or the release gate are **protected**. Say so clearly in the pull request description; a human maintainer must explicitly approve them (see [GOVERNANCE.md](GOVERNANCE.md)). You may draft such changes, but never approve or merge them.
 - CHARTER.md and charter/charter.toml must always change together; `tests/test_charter.py` enforces this.
-- When a hard limit's enforcing code is built and tested, update its `status` to `active` in both charter files in the same change.
+- When a hard limit's enforcing code is built and tested, update its `status` (`planned` → `partial` → `active`) in both charter files in the same change.
+- After any reviewed change to a protected file, run `python -m hfai.guardian integrity --update`, or the guardian (and `tests/test_integrity.py`) will refuse it. Never run it to make an unreviewed change pass.
+- The AI process is untrusted: it only proposes. New abilities are added only as executors in `src/hfai/guardian/actions.py`, with facts worked out by the guardian, plus a rule in `charter/actions.rules`. Both are protected areas.
 
 ## The owner
 
@@ -53,4 +55,6 @@ The founding maintainer is new to programming and monitors and evaluates progres
 ```bash
 python -m pytest              # run all tests
 python -m hfai.charter        # check the charter and print a plain-language summary
+python -m hfai.guardian demo  # run the safety-layer demonstration
+python -m hfai.guardian integrity [--update]  # check (or, after review, record) protected files
 ```

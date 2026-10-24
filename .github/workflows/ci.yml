@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install
-        run: pip install -e ".[dev,crypto]"
+        run: pip install -e ".[dev]"
       - name: Check the charter
         run: python -m hfai.charter
       - name: Run tests

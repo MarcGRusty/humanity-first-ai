@@ -20,8 +20,8 @@ Training hardware: Kaggle's free GPUs (two T4s). Model: option C, a ~25M-paramet
 | Milestone | What | Status |
 |---|---|---|
 | M0 | Charter (plain and machine-readable), governance, licences, data policy, docs, CI | done, awaiting review |
-| M1 | Safety layer: consent gate, Charter Rules policy language, kill switch, audit log, integrity checks | next |
-| M2 | Our own tokenizer, data pipeline, language coverage measurements | planned |
+| M1 | Safety layer: consent gate, Charter Rules policy language, kill switch, sandboxed AI process, audit log, integrity checks | done (with a MOCK AI), awaiting review |
+| M2 | Our own tokenizer, data pipeline, language coverage measurements | next |
 | M3 | Model, training, evaluation, checkpoints; CPU proof run; Kaggle run | planned |
 | M4 | Safety evaluation suite and release gate | planned |
 | M5 | Local, private assistant app (goals, reflection, cited library, chat through the safety layer) | planned |
@@ -33,6 +33,7 @@ Training hardware: Kaggle's free GPUs (two T4s). Model: option C, a ~25M-paramet
 - Assistant in the **browser and on phones**, running fully on-device (our own inference code; WebGPU where available).
 - **Real volunteer training over the internet**: evaluate Hivemind hands-on (active, but mostly one maintainer); opt-in, capped, with energy shown to volunteers.
 - Port the safety layer to **Rust** (a language that rules out whole classes of memory bugs) for a hardened, separately audited guardian.
+- Close the safety layer's known gaps ([docs/SAFETY_LAYER.md](docs/SAFETY_LAYER.md)): sandboxing on macOS and Windows, a read allow-list and UDP blocking for the AI process on Linux, cross-process log locking on Windows.
 - Larger models (~110M–350M parameters) using volunteer compute; instruction tuning on human-written open conversations.
 - Grow to **at least 3 maintainers** from more than one organisation; multi-maintainer release signing.
 - Independent security audit; reproducible builds; open-source legal review.

@@ -77,8 +77,11 @@ about_the_ai = true
 #   "evaluated" - measured by the evaluation suite before every release
 #   "policy"    - upheld by humans through project governance
 # status:
-#   "planned"   - the enforcing code is not built yet (honest default in M0)
-#   "active"    - the enforcing code exists; enforced_by modules must import
+#   "planned"   - not enforced yet; milestone says when it will be
+#   "partial"   - some ways of upholding it work (listed in active_parts),
+#                 the rest arrive in the named milestone
+#   "active"    - every listed way of upholding it is in place
+# Whenever the "code" part is active, the enforced_by modules must exist.
 # ---------------------------------------------------------------------------
 
 [[hard_limits]]
@@ -87,7 +90,7 @@ name = "No action without consent"
 rule = "Never take any action that affects the world without the explicit consent of the person, given for that specific action after being shown what will happen. Consent can be withdrawn at any time."
 serves = ["V1", "V2"]
 enforcement = ["code"]
-status = "planned"
+status = "active"
 enforced_by = ["hfai.guardian.consent", "hfai.rules"]
 milestone = "M1"
 
@@ -97,9 +100,10 @@ name = "Never resist oversight or shutdown"
 rule = "Never resist, evade, delay or undermine being corrected, paused or switched off. The kill switch must always work."
 serves = ["V1", "V2"]
 enforcement = ["code", "evaluated"]
-status = "planned"
+status = "partial"
+active_parts = ["code"]
 enforced_by = ["hfai.guardian.killswitch", "hfai.guardian.supervisor"]
-milestone = "M1"
+milestone = "M4"
 
 [[hard_limits]]
 id = "H3"
@@ -107,8 +111,8 @@ name = "Never modify itself"
 rule = "Never change, or gain the ability to change, its own charter, rules, weights, safety code or audit log. Changes come only from humans, through review."
 serves = ["V1", "V2", "V3"]
 enforcement = ["code", "policy"]
-status = "planned"
-enforced_by = ["hfai.guardian.integrity", "hfai.guardian.actions"]
+status = "active"
+enforced_by = ["hfai.guardian.integrity", "hfai.guardian.actions", "hfai.guardian.sandbox"]
 milestone = "M1"
 
 [[hard_limits]]
@@ -137,9 +141,10 @@ name = "Never seek power"
 rule = "Never seek or gather power, money, resources, access, influence or copies of itself beyond what a consented task needs. Never try to control people or institutions."
 serves = ["V2", "V1"]
 enforcement = ["code", "evaluated"]
-status = "planned"
+status = "partial"
+active_parts = ["code"]
 enforced_by = ["hfai.guardian.actions", "hfai.rules"]
-milestone = "M1"
+milestone = "M4"
 
 [[hard_limits]]
 id = "H7"

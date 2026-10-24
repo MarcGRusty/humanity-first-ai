@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 ENFORCEMENT_KINDS = frozenset({"code", "heuristic", "evaluated", "policy"})
-LIMIT_STATUSES = frozenset({"planned", "active"})
+LIMIT_STATUSES = frozenset({"planned", "partial", "active"})
 CHARTER_STATUSES = frozenset({"draft", "ratified"})
 
 # Hard limits that must always exist and always be enforced by code.
@@ -66,6 +66,7 @@ class HardLimit:
     status: str
     enforced_by: tuple[str, ...]
     milestone: str | None = None
+    active_parts: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -168,13 +169,20 @@ def validate(data: dict, *, check_modules: bool = True) -> list[str]:
                 problems.append(f"hard limit {lid}: unknown enforcement {kind!r}")
         status = limit.get("status")
         if status not in LIMIT_STATUSES:
-            problems.append(f"hard limit {lid}: status must be 'planned' or 'active'")
-        if status == "planned" and not limit.get("milestone"):
-            problems.append(f"hard limit {lid}: planned limits must name the milestone that builds them")
-        if status == "active" and "code" in enforcement:
+            problems.append(f"hard limit {lid}: status must be 'planned', 'partial' or 'active'")
+        if status in ("planned", "partial") and not limit.get("milestone"):
+            problems.append(f"hard limit {lid}: planned or partial limits must name the milestone that completes them")
+        active_parts = limit.get("active_parts", [])
+        if status == "partial":
+            if not active_parts or not set(active_parts) < set(enforcement):
+                problems.append(f"hard limit {lid}: partial limits must list active_parts, some but not all of its enforcement")
+        elif active_parts:
+            problems.append(f"hard limit {lid}: only partial limits list active_parts")
+        code_active = (status == "active" and "code" in enforcement) or (status == "partial" and "code" in active_parts)
+        if code_active:
             modules = limit.get("enforced_by", [])
             if not modules:
-                problems.append(f"hard limit {lid}: active and code-enforced, so enforced_by must list modules")
+                problems.append(f"hard limit {lid}: its code is active, so enforced_by must list modules")
             if check_modules:
                 for module in modules:
                     try:
@@ -251,6 +259,7 @@ def load_charter(path: Path | str | None = None, *, check_modules: bool = True) 
                 status=h["status"],
                 enforced_by=tuple(h.get("enforced_by", [])),
                 milestone=h.get("milestone"),
+                active_parts=tuple(h.get("active_parts", [])),
             )
             for h in data["hard_limits"]
         ),
@@ -265,13 +274,19 @@ def load_charter(path: Path | str | None = None, *, check_modules: bool = True) 
 def summary(charter: Charter) -> str:
     """A plain-language summary of the charter and what is enforced today."""
     active = [h for h in charter.hard_limits if h.status == "active"]
+    partial = [h for h in charter.hard_limits if h.status == "partial"]
     planned = [h for h in charter.hard_limits if h.status == "planned"]
     lines = [
         f"{charter.name} v{charter.version} ({charter.status})",
         f"  {len(charter.values)} values, {len(charter.hard_limits)} hard limits, "
         f"{len(charter.conflict_rules)} conflict rules, {len(charter.promises)} promises",
-        f"  Hard limits enforced today: {len(active)}. Still planned: {len(planned)}.",
+        f"  Hard limits fully enforced today: {len(active)}. Partly: {len(partial)}. Still planned: {len(planned)}.",
     ]
+    for h in active:
+        lines.append(f"    {h.id} {h.name}: active ({' + '.join(h.enforcement)})")
+    for h in partial:
+        rest = [k for k in h.enforcement if k not in h.active_parts]
+        lines.append(f"    {h.id} {h.name}: {' + '.join(h.active_parts)} active; {' + '.join(rest)} planned for {h.milestone}")
     for h in planned:
         lines.append(f"    {h.id} {h.name}: planned for {h.milestone}")
     lines.append(f"  Fingerprint (SHA-256): {charter.sha256}")

@@ -51,6 +51,6 @@ git clone https://github.com/MarcGRusty/humanity-first-ai.git
 cd humanity-first-ai
 python -m venv .venv
 source .venv/bin/activate        # on Windows: .venv\Scripts\activate
-pip install -e ".[dev,crypto]"   # add ",train" for PyTorch (large download)
+pip install -e ".[dev]"   # add ",train" for PyTorch (large download)
 python -m pytest
 ```

@@ -54,6 +54,14 @@ Terms are added here the first time the project uses them. If something is uncle
 
 **Digital signature.** A way for a person holding a secret key to "sign" a file so that anyone can check, using a public key, that the file is exactly what that person signed.
 
+**Process.** A running program. The AI runs as its own process, separate from the guardian, so the operating system keeps them apart and the guardian can stop it at any moment.
+
+**Sandbox.** Restrictions the operating system places on a process, so it cannot do certain things (write files, use the network) even if it tries.
+
+**Landlock.** A Linux kernel feature that lets a program permanently lock itself (and anything it starts) out of chosen abilities, such as writing files or opening network connections. Our AI process is started behind Landlock.
+
+**MOCK / SIMULATION.** A clearly labelled stand-in used for testing before the real thing exists. Until M3 the "AI" in tests and demos is a MOCK that replays scripted replies; it does not think.
+
 **Policy language / Charter Rules.** A tiny language of our own, used only to write the rules for what actions the AI may propose. It is deliberately limited (no loops, no file or internet access) so the rules are easy to check and cannot do anything harmful themselves.
 
 **Prompt injection.** An attack where text the AI reads (a web page, a document) contains hidden instructions, hoping the AI will obey them. Our defence: text the AI reads is treated as information, never as commands, and every action still needs your consent.

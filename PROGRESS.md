@@ -4,6 +4,34 @@ Newest session first. Each entry: what was done, what works, what doesn't yet, w
 
 ---
 
+## Session 1 (2026-10-24), continued: M1 safety layer
+
+### What works (M1)
+- **Charter Rules**, our own small policy language (`src/hfai/rules/`, spec in [docs/CHARTER_RULES.md](docs/CHARTER_RULES.md)). "Allow without consent" is a syntax error; default deny; no loops or I/O; types and charter IDs checked at load time. Fuzzed with 2,000 random inputs without a crash.
+- **Guardian** (`src/hfai/guardian/`): consent gate; action registry (only `save_note` and `export_notes` exist, both local and undoable, with facts worked out by the guardian, not the AI); separate AI process with a strict message protocol; kill switch (API, STOP file, `python -m hfai.guardian stop` from outside, timeout); Linux kernel sandbox (Landlock) for the AI process; hash-chained audit log; integrity manifest with Ed25519 signature support.
+- **Demo** with real code and real processes: [docs/demos/M1-safety-layer-demo.txt](docs/demos/M1-safety-layer-demo.txt). The AI is a MOCK and the person's answers are SIMULATED; both are labelled.
+- Charter status updated honestly: **H1 and H3 active; H2 and H6 partly active** (code active, evaluations in M4). The other six hard limits are still planned.
+- **182 tests pass** (5 repeated runs, no flaky tests).
+
+### Measured
+- Kill switch: AI process dead 1–2 ms after stop, including one that ignores polite stop signals.
+- Sandboxed AI process: file write, file truncation, TCP connection and signalling the guardian all blocked by the Linux kernel (Landlock ABI 7 in this container).
+- Audit log: an edited entry and a deleted entry both detected at the exact line.
+
+### What doesn't work yet
+- No real model: the AI is a MOCK until M3.
+- Text-level rules (H4, H5, H7, H8) not enforced yet (M4).
+- Sandbox: Linux only (macOS: file-size limit only; Windows: none). File *reads* and UDP are not restricted yet. See the honest limits in [docs/SAFETY_LAYER.md](docs/SAFETY_LAYER.md).
+- Manifest is unsigned (no maintainer key until M7).
+
+### Cost
+- Compute: about 2.5 seconds per full test run on 4 CPU cores. Energy: negligible.
+
+### Next
+- M2: our own byte-level tokenizer, data pipeline, language coverage measurements. Blocked in this container by the network policy (Hugging Face, Wikimedia and Gutenberg domains); see the note in the M0 entry.
+
+---
+
 ## Session 1 (2026-10-24): planning and M0 foundations
 
 ### Decisions made with the founding maintainer

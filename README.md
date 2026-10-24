@@ -9,7 +9,7 @@ An open, original AI that puts people first. It is:
 - **For people's growth, not screen time.** It helps with your own goals (health, learning, relationships, purpose, helping others) and never optimises for engagement.
 - **Free forever, owned by no one.** Open licences, peer-to-peer distribution, community governance, and no tokens or paid tiers.
 
-## Status: early prototype (Phase 1, milestone M0)
+## Status: early prototype (Phase 1, milestone M1)
 
 Honestly, today:
 
@@ -17,8 +17,8 @@ Honestly, today:
 |---|---|
 | Charter (plain language + machine-readable, kept in sync by tests) | ✅ Draft, awaiting founding maintainer approval |
 | Governance, licences, data policy, docs | ✅ Done |
-| Safety layer (consent, kill switch, audit log, Charter Rules language) | ⏳ Next (M1) |
-| Tokenizer and data pipeline | ⏳ Planned (M2) |
+| Safety layer: consent gate, kill switch, sandboxed AI process, audit log, integrity checks, our own Charter Rules policy language | ✅ Working and tested with a MOCK AI ([docs/SAFETY_LAYER.md](docs/SAFETY_LAYER.md)) |
+| Tokenizer and data pipeline | ⏳ Next (M2) |
 | Model and training | ⏳ Planned (M3), **no trained model exists yet** |
 | Safety evaluations and release gate | ⏳ Planned (M4) |
 | Assistant app | ⏳ Planned (M5) |
@@ -33,6 +33,8 @@ What to expect when the model exists: it will be **small** (about 25 million par
 - [PROGRESS.md](PROGRESS.md): what has been done, session by session
 - [DATA.md](DATA.md): every data source and its licence
 - [docs/LANGUAGES.md](docs/LANGUAGES.md): language coverage, measured
+- [docs/SAFETY_LAYER.md](docs/SAFETY_LAYER.md): how the safety layer works, measured results, honest limits
+- [docs/CHARTER_RULES.md](docs/CHARTER_RULES.md): our own small policy language
 - [docs/GLOSSARY.md](docs/GLOSSARY.md): plain-language explanations of the technical terms
 - [GOVERNANCE.md](GOVERNANCE.md): how decisions are made
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to help, including without coding
@@ -49,6 +51,7 @@ source .venv/bin/activate        # on Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 python -m pytest                 # run all tests
 python -m hfai.charter           # check the charter and print a summary
+python -m hfai.guardian demo     # watch every safeguard work (MOCK AI, simulated answers)
 ```
 
 ## Licence

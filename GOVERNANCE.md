@@ -49,6 +49,8 @@ Summary from [CHARTER.md](CHARTER.md) Part 5, with the process in full:
 
 Fixing typos or clarifying wording without changing meaning: a 7-day comment period and one maintainer's approval. If anyone argues the meaning changes, the full process applies.
 
+Updating a hard limit's **status** (planned, partly active, active) is not a charter change: it records a fact about the software, and is reviewed as part of the code change that makes it true. A status may only move toward "active" when working, tested enforcement is merged, and must move back if that enforcement is removed or found not to work.
+
 ## Releases
 
 - An official release is a set of files (code, charter, weights) listed in a **signed release manifest**: each file's fingerprint (SHA-256), signed with maintainers' keys.

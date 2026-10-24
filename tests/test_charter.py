@@ -52,10 +52,15 @@ def test_values_match_and_are_in_order(data, md):
 
 def _upheld_line(limit) -> str:
     how = " + ".join(limit["enforcement"])
+    milestone = limit["milestone"]
     if limit["status"] == "planned":
-        status = f"planned, built in {limit['milestone']}"
+        status = f"planned, built in {milestone}"
+    elif limit["status"] == "partial":
+        parts = [f"{kind} active" for kind in limit["active_parts"]]
+        parts += [f"{kind} planned for {milestone}" for kind in limit["enforcement"] if kind not in limit["active_parts"]]
+        status = "partly active: " + ", ".join(parts)
     else:
-        status = "active"
+        status = f"active since {milestone}"
     return f"How it is upheld: {how}. Status: {status}."
 
 
@@ -114,6 +119,9 @@ def test_valid_baseline(data):
         (lambda d: d["hard_limits"].pop(1), "H2 is missing"),
         (lambda d: d["hard_limits"][3].update(status="planned", milestone=""), "must name the milestone"),
         (lambda d: d["hard_limits"][0].update(status="active", enforced_by=[]), "enforced_by must list modules"),
+        (lambda d: d["hard_limits"][3].update(status="partial", active_parts=[]), "must list active_parts"),
+        (lambda d: d["hard_limits"][0].update(status="partial", active_parts=["code"]), "must list active_parts"),
+        (lambda d: d["hard_limits"][0].update(status="active", active_parts=["code"]), "only partial limits"),
         (lambda d: d["freedoms"].update(actions_need_consent=False), "actions_need_consent"),
         (lambda d: d["governance"].update(ai_may_vote=True), "ai_may_vote"),
         (lambda d: d["governance"].update(comment_days_weakening=1), "comment period"),

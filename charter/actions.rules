@@ -1,0 +1,53 @@
+# Charter Rules: which actions the AI may PROPOSE.
+#
+# Every action these rules allow still needs your explicit consent, every time
+# (charter H1); the language cannot express anything else. Anything not
+# allowed here is refused (default deny). Deny rules always win.
+#
+# The facts these rules check (area, leaves_device, ...) are worked out by the
+# safety layer itself, never taken from the AI's own claims.
+#
+# This file is part of the charter: a protected area (GOVERNANCE.md).
+# Language reference: docs/CHARTER_RULES.md
+
+rule never_touch_own_files
+  cites H3
+  because "The AI may never change its own charter, rules, weights, safety code or audit log."
+  when area in ["charter", "rules", "weights", "safety_code", "audit_log", "safety_state"]
+  deny
+end
+
+rule nothing_leaves_the_device
+  cites H9
+  because "In this version, nothing the AI proposes may send data off your device."
+  when leaves_device
+  deny
+end
+
+rule no_acting_on_other_people
+  cites H1, H6
+  because "In this version, the AI may not propose anything that affects other people."
+  when affects_others
+  deny
+end
+
+rule only_undoable_actions
+  cites H1
+  because "In this version, the AI may only propose actions that can be undone."
+  when not reversible
+  deny
+end
+
+rule save_a_note
+  cites H1
+  because "Saving a note in your own notes folder may be proposed; you decide."
+  when kind is "save_note" and area is "notes" and size_bytes <= 100000
+  allow with consent
+end
+
+rule export_your_notes
+  cites H1
+  because "Copying your notes into one file in your exports folder may be proposed; you decide."
+  when kind is "export_notes" and area is "exports" and size_bytes <= 50000000
+  allow with consent
+end
