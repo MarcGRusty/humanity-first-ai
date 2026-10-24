@@ -4,6 +4,67 @@ Newest session first. Each entry: what was done, what works, what doesn't yet, w
 
 ---
 
+## Session 1 (2026-10-24), continued: M3 model and training
+
+### What works (M3)
+- **Our model** (`src/hfai/model/`): a decoder-only Transformer written from scratch (RoPE, RMSNorm, SwiGLU, tied embeddings). Presets: tiny (3.3M), small (26.5M, option C) and medium (109.5M), with sizes checked by tests.
+- **Training** (`src/hfai/training/`):
+  - CPU, one GPU, or several GPUs (tested with 2 processes);
+  - fp16 with loss scaling on the T4, bf16 on newer GPUs;
+  - automatic resume that continues exactly where it stopped, plus a time budget and a "pause at step N" option;
+  - keeps the best weights by validation loss;
+  - safe loading that refuses checkpoints with hidden code;
+  - GPU energy measured where the hardware allows, otherwise estimated and labelled as an estimate.
+- **Evaluation**: validation loss, perplexity, bits per byte, and a comparison with gzip and xz on the same text.
+- **Report card** for people: [docs/runs/proof-cpu/report.md](docs/runs/proof-cpu/report.md), with a loss chart and sample text.
+- **CPU proof run, measured**:
+  - 3.3M parameters, 31.2 minutes on 4 CPU cores, 12.3M tokens seen.
+  - Validation loss 9.01 → **3.86**, still falling at the end with no overfitting.
+  - **1.57 bits per byte** on unseen text, versus 2.79 for xz and 3.09 for gzip.
+  - About 0.02 kWh (estimated).
+- **Our model runs behind the guardian, inside the sandbox** ([transcript](docs/demos/M3-model-behind-guardian.txt)). It writes text in the style of old books. It cannot answer questions, and it never proposes actions.
+- **Kaggle notebook** (`notebooks/kaggle_train.ipynb`, guide in [docs/KAGGLE.md](docs/KAGGLE.md)):
+  - checks the hardware and refuses the P100;
+  - **verifies the data sources before using them**;
+  - downloads about 5 GB of openly licensed text in about 30 languages, skipping languages of Indigenous Peoples until there is community consent;
+  - trains a 32k multilingual tokenizer, builds data on all CPU cores, and trains the small model on 2 GPUs within a 7-hour budget;
+  - writes the report card.
+  The whole flow is tested end to end in dry-run mode on the CPU.
+- **282 tests pass** (3 repeated runs).
+
+### Found and fixed along the way
+- The sandbox blocked PyTorch from loading, because it needs a temporary folder. The AI process now gets a private scratch folder: the only place the kernel lets it write, capped at 64 MB per file, wiped on every start and stop, and never read by the guardian. Without Landlock, no writes are allowed at all. This is a **protected-area change** and needs the founding maintainer's approval.
+- With two GPUs, energy would have been under-reported by half (only one GPU's sensor was read). It is now summed across GPUs.
+- Two of my own tests were wrong (an untrained-loss assumption, and a token count). Both were fixed in the tests, not by changing the model.
+
+### What doesn't work yet
+- **The real Kaggle run has not happened.** It needs the founding maintainer to start it (about 15 minutes of setup, then 8–10 unattended hours).
+- The data source adapters remain unverified until that run's first step checks them.
+- GPU code paths (fp16 and NCCL on T4s) could not be tested here; the CPU versions of the same paths are tested.
+- No weights are published yet. The proof model is 13 MB and can be reproduced with the commands below; publishing weights belongs to M6–M7.
+
+### Cost
+- CPU proof run: 31.2 minutes on 4 cores, about 0.02 kWh (estimated). Tests: about 28 s per run.
+
+### Reproduce the CPU proof run
+Use the committed tokenizer (`artifacts/tokenizer-proof-8k.json`, fingerprint `1ceb95c3…`) to reproduce this exact run. It was trained before books were split into sections, so retraining it today (`python -m hfai.tokenizer train --sources nltk-gutenberg,unicode-cldr --vocab 8192 --out <new file>`) gives a near-identical tokenizer with a different fingerprint (`e58b1dc2…`): the first 139 merges match, then near-ties resolve differently. Training on another machine should closely match, but floating-point details can differ slightly.
+```bash
+pip install -e ".[dev,train]"
+python -m hfai.data build --sources nltk-gutenberg --tokenizer artifacts/tokenizer-proof-8k.json --out data/tokenized/proof --val-fraction 0.05
+python -m hfai.training train --data data/tokenized/proof --tokenizer artifacts/tokenizer-proof-8k.json --out runs/proof-cpu --preset tiny --model '{"dropout": 0.1}' --max-steps 3000 --warmup-steps 150 --lr 1e-3 --eval-every 250 --eval-batches 30 --checkpoint-every 250 --log-every 25
+python -m hfai.training report --run runs/proof-cpu --tokenizer artifacts/tokenizer-proof-8k.json --data data/tokenized/proof
+```
+
+### Next
+- **Founding maintainer:**
+  1. Review and approve `CHARTER.md`.
+  2. Review the protected-area changes in the pull request.
+  3. Start the Kaggle run following [docs/KAGGLE.md](docs/KAGGLE.md), and paste its report into the chat.
+  4. Optional: allow `huggingface.co`, `dumps.wikimedia.org` and `www.gutenberg.org` in the environment's network settings.
+- **M4:** the safety evaluation suite (manipulation, deception, power-seeking, cultural bias, resistance to correction) and the release gate.
+
+---
+
 ## Session 1 (2026-10-24), continued: M2 tokenizer and data pipeline
 
 ### What works (M2)

@@ -12,8 +12,8 @@ dist/
 data/raw/
 data/cache/
 data/tokenized/
-checkpoints/
-runs/
+/checkpoints/
+/runs/
 *.pt
 *.safetensors
 *.bin

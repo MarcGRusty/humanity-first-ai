@@ -4,8 +4,9 @@ The AI process (the model, or the MOCK worker until M3):
 
 * runs as a separate operating-system process, in its own process group;
 * is started through the sandbox launcher (guardian/sandbox.py), so on Linux
-  the kernel forbids it from writing files, connecting over TCP, or signalling
-  the guardian;
+  the kernel forbids it from writing files (except in a private scratch folder
+  that is wiped on every start and stop, and that the guardian never reads),
+  connecting over TCP, or signalling the guardian;
 * gets a minimal environment, with no network and no bytecode writing;
 * can only exchange messages over its stdin/stdout pipes, in the format in
   worker/protocol.py, and every reply is checked strictly;
@@ -19,6 +20,7 @@ import collections
 import json
 import os
 import queue
+import shutil
 import subprocess
 import sys
 import threading
@@ -44,9 +46,12 @@ class WorkerReply:
     proposals: list[dict]
 
 
-def _worker_env() -> dict:
+def _worker_env(scratch: Path) -> dict:
     src_dir = str(Path(hfai.__file__).resolve().parents[1])
     env = {
+        "TMPDIR": str(scratch),
+        "TEMP": str(scratch),
+        "TMP": str(scratch),
         "PATH": os.environ.get("PATH", ""),
         "PYTHONPATH": src_dir,
         "PYTHONDONTWRITEBYTECODE": "1",
@@ -84,14 +89,23 @@ class Supervisor:
     def pid(self) -> int | None:
         return self._process.pid if self._process else None
 
+    @property
+    def scratch(self) -> Path:
+        return self.killswitch.data_dir / "ai-scratch"
+
+    def _wipe_scratch(self) -> None:
+        shutil.rmtree(self.scratch, ignore_errors=True)
+
     def start(self) -> None:
         if self.killswitch.engaged:
             raise Stopped("The kill switch is engaged. A person must release it before the AI can start.")
         if self.alive:
             return
         command = [sys.executable, *self.worker_args]
+        self._wipe_scratch()
+        self.scratch.mkdir(mode=0o700, parents=True)
         if self.sandbox:
-            command = [sys.executable, "-m", "hfai.guardian.sandbox", "--", *command]
+            command = [sys.executable, "-m", "hfai.guardian.sandbox", "--scratch", str(self.scratch), "--", *command]
         self._lines = queue.Queue()
         self._closed.clear()
         self._sandbox_ready.clear()
@@ -101,7 +115,7 @@ class Supervisor:
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            env=_worker_env(),
+            env=_worker_env(self.scratch),
             text=True,
             encoding="utf-8",
             bufsize=1,
@@ -110,7 +124,7 @@ class Supervisor:
         self.killswitch.register(self._process)
         threading.Thread(target=self._read_stdout, args=(self._process,), daemon=True).start()
         threading.Thread(target=self._read_stderr, args=(self._process,), daemon=True).start()
-        threading.Thread(target=self._watch, daemon=True).start()
+        threading.Thread(target=self._watch, args=(self._process,), daemon=True).start()
 
         if self.sandbox:
             if not self._sandbox_ready.wait(timeout=30) or not self.sandbox_report or "error" in self.sandbox_report:
@@ -142,13 +156,15 @@ class Supervisor:
                 self._stderr_tail.append(line.rstrip())
         self._sandbox_ready.set()
 
-    def _watch(self) -> None:
+    def _watch(self, process: subprocess.Popen) -> None:
         # Pulls the kill switch as soon as a STOP file appears, from anywhere.
-        while not self._closed.is_set() and self.alive:
+        while not self._closed.is_set() and process.poll() is None:
             if self.killswitch.engaged:
                 self.killswitch.enforce()
-                return
+                break
             time.sleep(WATCH_INTERVAL)
+        if process.poll() is not None and self._process is process:  # never wipe a newer process's folder
+            self._wipe_scratch()
 
     def ask(self, message: str) -> WorkerReply:
         if self.killswitch.engaged:
@@ -208,3 +224,4 @@ class Supervisor:
             except (OSError, subprocess.TimeoutExpired):
                 self._kill()
         self.killswitch.unregister(process)
+        self._wipe_scratch()

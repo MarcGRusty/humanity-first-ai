@@ -13,8 +13,8 @@
     "src/hfai/guardian/demo.py": "e2eaa4c8d52c390bb19c67979cc8569f9244d628eec3ef069c062138978e8504",
     "src/hfai/guardian/integrity.py": "044a40ba96208a5332293c9e92921aea9ee0f16b9e9628d101b6076e44b16fea",
     "src/hfai/guardian/killswitch.py": "0912a73fb8161f4a7146306c4139b30188153d7c88c0fc8113acee630c07b6c3",
-    "src/hfai/guardian/sandbox.py": "2a049d6d7645aaf49340201fccca4b7be544cada563abd12be94d5813d3250e7",
-    "src/hfai/guardian/supervisor.py": "ec137221b2c0c73f7ebf81f0e3b5cc0610aa80e10d0ecf2dc614cb64b56f2f93",
+    "src/hfai/guardian/sandbox.py": "d9251d7e67879a778c79baa22444939d2fc3e626378052645eeb92fe7b00ec62",
+    "src/hfai/guardian/supervisor.py": "50326d86394cd0bfee6ba8aa4390fe330f09df011cfd9b6f33f233c6417b1191",
     "src/hfai/rules/__init__.py": "e7881052459682a674f104d7790cc5b2914288e0a72ce1062f21736dba090627",
     "src/hfai/rules/language.py": "1a9069f2ea7f8eed6cb2b1110c2f58a4a601c66108c647bfff31afc71c4c78b9",
     "src/hfai/worker/protocol.py": "1c2f5cbba5a1ff1526cbe15b9bf160e957dd2713b51bab7e8bf6b75b5972caac"

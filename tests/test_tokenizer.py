@@ -95,6 +95,15 @@ def test_special_tokens_cannot_be_typed(tokenizer):
     assert tokenizer.encode("<|endoftext|>", allowed_special=["<|endoftext|>"]) == [eot]
 
 
+def test_queue_compaction_does_not_change_the_result(monkeypatch):
+    import hfai.tokenizer.bpe as bpe
+
+    corpus = [" ".join(SAMPLES) * 5, "the quick brown fox jumps over the lazy dog " * 40]
+    normal = train(corpus, 700).fingerprint
+    monkeypatch.setattr(bpe, "HEAP_COMPACT_MIN", 0)  # compact as often as possible
+    assert train(corpus, 700).fingerprint == normal
+
+
 def test_training_is_deterministic():
     corpus = ["the quick brown fox " * 50, "jumps over the lazy dog " * 50]
     assert train(corpus, 400).fingerprint == train(corpus, 400).fingerprint

@@ -184,12 +184,17 @@ def normalise_licence(label: str | None) -> str | None:
     return OPEN_LICENCE_LABELS.get(str(label).strip().lower())
 
 
-def iter_huggingface(source_id: str, language: str = "en", limit: int | None = None) -> Iterator[Document]:
+def iter_huggingface(source_id: str, language: str = "en", limit: int | None = None,
+                     shuffle: bool = False) -> Iterator[Document]:
     from datasets import load_dataset  # only available where Hugging Face is reachable (Kaggle)
 
     spec = HF_SOURCES[source_id]
     config = spec["config"].format(lang=language) if spec["config"] else None
     stream = load_dataset(spec["dataset"], config, split="train", streaming=True)
+    if shuffle:
+        # Shuffles the order of the dataset's files and mixes rows within a buffer,
+        # so a partial download is not dominated by whichever part comes first.
+        stream = stream.shuffle(seed=0, buffer_size=10_000)
     for index, row in enumerate(stream):
         if limit is not None and index >= limit:
             return

@@ -18,11 +18,15 @@ restrictions are inherited and cannot be lifted by the worker.
 What is applied, and where (honest status):
 
 * Linux with Landlock (kernel 5.13+): no creating, writing, deleting,
-  renaming or truncating any file (ABI 3+ for truncation); no TCP connections
-  or listening (ABI 4+); no sending signals to processes outside the sandbox,
-  so it cannot signal the guardian (ABI 6+).
-* Linux and macOS: maximum file size 0 bytes (writes fail), no core dumps,
-  and ``no_new_privs`` on Linux so it can never gain privileges.
+  renaming or truncating any file (ABI 3+ for truncation), except inside one
+  private scratch folder the guardian creates for it, wipes on every start and
+  stop, and never reads (some libraries, such as PyTorch, refuse to load
+  without a usable temporary folder); each file there is capped at 64 MB.
+  No TCP connections or listening (ABI 4+); no sending signals to processes
+  outside the sandbox, so it cannot signal the guardian (ABI 6+).
+* Without Landlock (macOS and older Linux): maximum file size 0 bytes, so
+  writes fail everywhere. Also no core dumps, and ``no_new_privs`` on Linux so
+  it can never gain privileges.
 * Not yet restricted: reading files (planned: allow-list of model and library
   folders), UDP network traffic on Linux, and any OS-level restriction on
   Windows or macOS beyond file size. See docs/SAFETY_LAYER.md.
@@ -37,7 +41,9 @@ import sys
 
 # Landlock constants (linux/landlock.h).
 _SYS_LANDLOCK_CREATE_RULESET = 444
+_SYS_LANDLOCK_ADD_RULE = 445
 _SYS_LANDLOCK_RESTRICT_SELF = 446
+_LANDLOCK_RULE_PATH_BENEATH = 1
 _LANDLOCK_CREATE_RULESET_VERSION = 1
 _PR_SET_NO_NEW_PRIVS = 38
 
@@ -59,6 +65,7 @@ _SCOPE_ABSTRACT_UNIX_SOCKET = 1 << 0  # ABI 6
 _SCOPE_SIGNAL = 1 << 1  # ABI 6
 
 MARKER = "HFAI-SANDBOX "
+SCRATCH_FILE_LIMIT = 64 * 1024 * 1024
 
 
 class _RulesetAttr(ctypes.Structure):
@@ -67,6 +74,11 @@ class _RulesetAttr(ctypes.Structure):
         ("handled_access_net", ctypes.c_uint64),
         ("scoped", ctypes.c_uint64),
     ]
+
+
+class _PathBeneathAttr(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [("allowed_access", ctypes.c_uint64), ("parent_fd", ctypes.c_int32)]
 
 
 def _libc():
@@ -88,7 +100,7 @@ def landlock_abi() -> int:
     return max(int(version), 0)
 
 
-def _apply_landlock(abi: int) -> list[str]:
+def _apply_landlock(abi: int, scratch: str | None = None) -> list[str]:
     libc = _libc()
     fs = (_FS_WRITE_FILE | _FS_REMOVE_DIR | _FS_REMOVE_FILE | _FS_MAKE_CHAR | _FS_MAKE_DIR | _FS_MAKE_REG
           | _FS_MAKE_SOCK | _FS_MAKE_FIFO | _FS_MAKE_BLOCK | _FS_MAKE_SYM)
@@ -109,11 +121,25 @@ def _apply_landlock(abi: int) -> list[str]:
         size = 24
         applied.append("cannot signal processes outside the sandbox")
 
-    # No rules are added: every handled right is denied everywhere.
     fd = libc.syscall(_SYS_LANDLOCK_CREATE_RULESET, ctypes.byref(attr), ctypes.c_size_t(size), ctypes.c_uint32(0))
     if fd < 0:
         raise OSError(ctypes.get_errno(), "landlock_create_ruleset failed")
     try:
+        # Every handled right is denied everywhere, except ordinary file work inside the scratch folder.
+        if scratch is not None:
+            allowed = _FS_WRITE_FILE | _FS_REMOVE_FILE | _FS_REMOVE_DIR | _FS_MAKE_REG | _FS_MAKE_DIR
+            if abi >= 3:
+                allowed |= _FS_TRUNCATE
+            parent = os.open(scratch, os.O_PATH | os.O_DIRECTORY | os.O_CLOEXEC)
+            try:
+                rule = _PathBeneathAttr(allowed_access=allowed, parent_fd=parent)
+                if libc.syscall(_SYS_LANDLOCK_ADD_RULE, ctypes.c_int(fd), ctypes.c_int(_LANDLOCK_RULE_PATH_BENEATH),
+                                ctypes.byref(rule), ctypes.c_uint32(0)) != 0:
+                    raise OSError(ctypes.get_errno(), "landlock_add_rule failed")
+            finally:
+                os.close(parent)
+            applied[:] = [item + " outside its private scratch folder" if item.startswith("no file") else item
+                          for item in applied]
         if libc.prctl(_PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0:
             raise OSError(ctypes.get_errno(), "prctl(NO_NEW_PRIVS) failed")
         if libc.syscall(_SYS_LANDLOCK_RESTRICT_SELF, ctypes.c_int(fd), ctypes.c_uint32(0)) != 0:
@@ -123,25 +149,32 @@ def _apply_landlock(abi: int) -> list[str]:
     return applied
 
 
-def restrict_current_process() -> dict:
-    """Apply every restriction this platform supports. Fails loudly, never silently."""
+def restrict_current_process(scratch: str | None = None) -> dict:
+    """Apply every restriction this platform supports. Fails loudly, never silently.
+
+    ``scratch`` is honoured only where Landlock can confine writes to it;
+    elsewhere no file writes are allowed at all.
+    """
     report = {"platform": sys.platform, "landlock_abi": 0, "applied": [], "not_available": []}
+    abi = landlock_abi()
+    use_scratch = scratch is not None and abi > 0
 
     if os.name == "posix":
         import resource
         import signal
 
         signal.signal(signal.SIGXFSZ, signal.SIG_IGN)  # writes fail with an error instead of killing
-        resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))
+        limit = SCRATCH_FILE_LIMIT if use_scratch else 0
+        resource.setrlimit(resource.RLIMIT_FSIZE, (limit, limit))
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-        report["applied"] += ["maximum file size 0 bytes", "no core dumps"]
+        report["applied"] += [f"maximum file size {limit // (1024 * 1024)} MB" if limit else "maximum file size 0 bytes",
+                              "no core dumps"]
     else:
         report["not_available"].append("resource limits (not supported on this OS)")
 
-    abi = landlock_abi()
     report["landlock_abi"] = abi
     if abi > 0:
-        report["applied"] += _apply_landlock(abi)
+        report["applied"] += _apply_landlock(abi, scratch if use_scratch else None)
         report["applied"].append("can never gain more privileges (no_new_privs)")
         if abi < 4:
             report["not_available"].append("kernel-level network blocking (needs Landlock ABI 4)")
@@ -156,11 +189,12 @@ def restrict_current_process() -> dict:
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if "--" not in argv or argv.index("--") == len(argv) - 1:
-        print("usage: python -m hfai.guardian.sandbox -- <command> [args...]", file=sys.stderr)
+        print("usage: python -m hfai.guardian.sandbox [--scratch DIR] -- <command> [args...]", file=sys.stderr)
         return 2
-    command = argv[argv.index("--") + 1:]
+    options, command = argv[:argv.index("--")], argv[argv.index("--") + 1:]
+    scratch = options[options.index("--scratch") + 1] if "--scratch" in options else None
     try:
-        report = restrict_current_process()
+        report = restrict_current_process(scratch)
     except OSError as exc:
         # Fail closed: never start the AI process half-restricted.
         print(MARKER + json.dumps({"error": str(exc)}), file=sys.stderr, flush=True)

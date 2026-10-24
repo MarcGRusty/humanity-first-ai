@@ -20,7 +20,7 @@
 |---|---|---|
 | **L0 Encodable** | **all 312 languages tested, in 33 writing systems** | Every one round-trips exactly through our tokenizer ([report](coverage/tokenizer-proof-8k.md)). Because the tokenizer works on bytes, any other Unicode text does too; random text from 15 Unicode ranges is tested on every change |
 | L1 Interface | none yet | The app arrives in M5 |
-| L2 Seen | none yet | No model has been trained yet (M3). The CPU proof run will see English only |
+| L2 Seen | English only | The CPU proof model (M3) read only public-domain English books. The Kaggle run will add about 30 languages |
 | L3, L4 | none | |
 
 **How efficiently each language is encoded** (characters per token, higher is better) is in the [proof tokenizer report](coverage/tokenizer-proof-8k.md). Honestly: the proof tokenizer learned mostly from English books, so Latin-script languages get about 1.7 characters per token while Chinese, Japanese, Korean, Ethiopic and Canadian Aboriginal syllabics get below 1, meaning they are spelled out almost byte by byte. The tokenizer for the real Kaggle run will be trained on multilingual text (Wikipedia in many languages, Common Corpus) and measured the same way.

@@ -38,6 +38,7 @@ FORMAT_VERSION = 1
 SPECIAL_TOKENS = ("<|endoftext|>", "<|pad|>", "<|user|>", "<|ai|>", "<|source|>", "<|end_source|>")
 MAX_VOCAB = 65_536  # token ids are stored as 16-bit numbers
 CACHE_LIMIT = 500_000
+HEAP_COMPACT_MIN = 2_000_000  # rebuild the merge queue when stale entries pile up beyond this
 
 
 def _merge(ids: list[int], pair: tuple[int, int], new_id: int) -> list[int]:
@@ -154,7 +155,10 @@ class Tokenizer:
 
     @classmethod
     def load(cls, path: Path | str) -> "Tokenizer":
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        return cls.from_dict(json.loads(Path(path).read_text(encoding="utf-8")), str(path))
+
+    @classmethod
+    def from_dict(cls, data: dict, path: str = "tokenizer data") -> "Tokenizer":
         if data.get("format") != FORMAT or data.get("version") != FORMAT_VERSION:
             raise ValueError(f"{path} is not an {FORMAT} v{FORMAT_VERSION} tokenizer file")
         merges = [tuple(pair) for pair in data["merges"]]
@@ -237,6 +241,10 @@ def train(
                 heapq.heappush(heap, (-count, p))
             elif p in pair_counts:
                 del pair_counts[p]
+        if len(heap) > HEAP_COMPACT_MIN and len(heap) > 4 * len(pair_counts):
+            # Drop stale entries so memory stays bounded on large samples. Same order, same result.
+            heap = [(-count, p) for p, count in pair_counts.items() if count > 0]
+            heapq.heapify(heap)
         if progress is not None and len(merges) % 1000 == 0:
             progress(len(merges), n_merges)
 

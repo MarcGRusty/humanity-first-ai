@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import multiprocessing
 import sys
 from array import array
 from collections import Counter, defaultdict
@@ -30,12 +31,23 @@ def is_validation(doc: Document, val_fraction: float) -> bool:
     return int.from_bytes(digest[:8], "big") / 2**64 < val_fraction
 
 
-def _write(path: Path, ids: array) -> None:
+def _write(handle, ids: array) -> None:
     if sys.byteorder != "little":
         ids = array("H", ids)
         ids.byteswap()
-    with path.open("ab") as handle:
-        ids.tofile(handle)
+    ids.tofile(handle)
+
+
+_worker_tokenizer: Tokenizer | None = None
+
+
+def _init_worker(tokenizer_data: dict) -> None:
+    global _worker_tokenizer
+    _worker_tokenizer = Tokenizer.from_dict(tokenizer_data)
+
+
+def _encode_doc(doc: Document) -> tuple[Document, bytes]:
+    return doc, array("H", _worker_tokenizer.encode(doc.text)).tobytes()
 
 
 def build(
@@ -45,12 +57,13 @@ def build(
     *,
     val_fraction: float = 0.02,
     cleaner: Cleaner | None = None,
+    workers: int = 1,
 ) -> dict:
+    """Clean, tokenize and shard documents. With workers > 1, tokenizing uses several CPU cores
+    (output order and content are the same as with one worker)."""
     if tokenizer.vocab_size > 65_536:
         raise ValueError("token IDs must fit in 16 bits")
     out_dir.mkdir(parents=True, exist_ok=True)
-    for name in ("train.bin", "val.bin"):
-        (out_dir / name).unlink(missing_ok=True)
     cleaner = cleaner or Cleaner()
     eot = tokenizer.token_id("<|endoftext|>")
 
@@ -59,20 +72,34 @@ def build(
     licences: dict[str, Counter] = defaultdict(Counter)
     languages: dict[str, Counter] = defaultdict(Counter)
 
-    for doc in documents:
-        cleaned, reason = cleaner.clean(doc)
-        reasons[doc.source][reason] += 1
-        if cleaned is None:
-            continue
-        ids = array("H", tokenizer.encode(cleaned.text))
-        ids.append(eot)
-        split = "val" if is_validation(cleaned, val_fraction) else "train"
-        _write(out_dir / f"{split}.bin", ids)
-        stats[doc.source][f"{split}_tokens"] += len(ids)
-        stats[doc.source][f"{split}_documents"] += 1
-        stats[doc.source]["bytes"] += len(cleaned.text.encode("utf-8"))
-        licences[doc.source][cleaned.licence] += 1
-        languages[doc.source][cleaned.language] += 1
+    def kept() -> Iterable[Document]:
+        for doc in documents:
+            cleaned, reason = cleaner.clean(doc)
+            reasons[doc.source][reason] += 1
+            if cleaned is not None:
+                yield cleaned
+
+    def encoded() -> Iterable[tuple[Document, array]]:
+        if workers <= 1:
+            for cleaned in kept():
+                yield cleaned, array("H", tokenizer.encode(cleaned.text))
+            return
+        with multiprocessing.get_context("spawn").Pool(workers, _init_worker, (tokenizer.to_dict(),)) as pool:
+            for cleaned, raw in pool.imap(_encode_doc, kept(), chunksize=16):
+                ids = array("H")
+                ids.frombytes(raw)
+                yield cleaned, ids
+
+    with (out_dir / "train.bin").open("wb") as train_file, (out_dir / "val.bin").open("wb") as val_file:
+        for doc, ids in encoded():
+            ids.append(eot)
+            split = "val" if is_validation(doc, val_fraction) else "train"
+            _write(val_file if split == "val" else train_file, ids)
+            stats[doc.source][f"{split}_tokens"] += len(ids)
+            stats[doc.source][f"{split}_documents"] += 1
+            stats[doc.source]["bytes"] += len(doc.text.encode("utf-8"))
+            licences[doc.source][doc.licence] += 1
+            languages[doc.source][doc.language] += 1
 
     report = {
         "tokenizer_fingerprint": tokenizer.fingerprint,

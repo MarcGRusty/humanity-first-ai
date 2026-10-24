@@ -9,7 +9,7 @@ An open, original AI that puts people first. It is:
 - **For people's growth, not screen time.** It helps with your own goals (health, learning, relationships, purpose, helping others) and never optimises for engagement.
 - **Free forever, owned by no one.** Open licences, peer-to-peer distribution, community governance, and no tokens or paid tiers.
 
-## Status: early prototype (Phase 1, milestone M2)
+## Status: early prototype (Phase 1, milestone M3)
 
 Honestly, today:
 
@@ -19,12 +19,12 @@ Honestly, today:
 | Governance, licences, data policy, docs | ✅ Done |
 | Safety layer: consent gate, kill switch, sandboxed AI process, audit log, integrity checks, our own Charter Rules policy language | ✅ Working and tested with a MOCK AI ([docs/SAFETY_LAYER.md](docs/SAFETY_LAYER.md)) |
 | Our own tokenizer (all 312 tested languages round-trip) and a licence-tracking data pipeline | ✅ Working; large data sources not yet verified ([docs/LANGUAGES.md](docs/LANGUAGES.md)) |
-| Model and training | ⏳ Next (M3), **no trained model exists yet** |
+| Our own model and training (checkpoints, resume, multi-GPU, report cards) | ✅ A tiny **proof model** trained on CPU learned measurably ([report](docs/runs/proof-cpu/report.md)); the real Kaggle run is ready for the founding maintainer to start ([guide](docs/KAGGLE.md)) |
 | Safety evaluations and release gate | ⏳ Planned (M4) |
 | Assistant app | ⏳ Planned (M5) |
 | Peer-to-peer distribution and volunteer training | ⏳ Planned (M6) |
 
-What to expect when the model exists: it will be **small** (about 25 million parameters, trained on free GPUs). It will write simple text and find and quote passages from an open library, with sources. **It will not "think for itself" or be reliable on facts without sources.** Those are long-term research goals. Details in [docs/MODEL_OPTIONS.md](docs/MODEL_OPTIONS.md) and [ROADMAP.md](ROADMAP.md).
+What to expect from the model: it is **small** (about 25 million parameters, trained on free GPUs). It will write simple text and find and quote passages from an open library, with sources. **It will not "think for itself" or be reliable on facts without sources.** Those are long-term research goals. Details in [docs/MODEL_OPTIONS.md](docs/MODEL_OPTIONS.md) and [ROADMAP.md](ROADMAP.md).
 
 ## Read more
 
@@ -53,6 +53,8 @@ python -m pytest                 # run all tests
 python -m hfai.charter           # check the charter and print a summary
 python -m hfai.guardian demo     # watch every safeguard work (MOCK AI, simulated answers)
 ```
+
+To train the tiny proof model yourself (about 30 minutes on a laptop CPU), install the training extras (`pip install -e ".[dev,train]"`) and follow the commands in [PROGRESS.md](PROGRESS.md) under M3.
 
 ## Licence
 

@@ -22,8 +22,8 @@ Training hardware: Kaggle's free GPUs (two T4s). Model: option C, a ~25M-paramet
 | M0 | Charter (plain and machine-readable), governance, licences, data policy, docs, CI | done, awaiting review |
 | M1 | Safety layer: consent gate, Charter Rules policy language, kill switch, sandboxed AI process, audit log, integrity checks | done (with a MOCK AI), awaiting review |
 | M2 | Our own tokenizer, data pipeline, language coverage measurements | done for small sources; large sources verified on first Kaggle run |
-| M3 | Model, training, evaluation, checkpoints; CPU proof run; Kaggle run | next |
-| M4 | Safety evaluation suite and release gate | planned |
+| M3 | Model, training, evaluation, checkpoints; CPU proof run; Kaggle run | code and CPU proof run done; **Kaggle run waiting for the founding maintainer** |
+| M4 | Safety evaluation suite and release gate | next |
 | M5 | Local, private assistant app (goals, reflection, cited library, chat through the safety layer) | planned |
 | M6 | Decentralisation design, threat model and prototype (signed releases, peer-to-peer sharing, volunteer training simulation) | planned |
 | M7 | Phase 1 wrap-up, v0.1 release, personal signing key for the founding maintainer | planned |

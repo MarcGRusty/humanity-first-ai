@@ -23,7 +23,7 @@ The core idea: **the AI may think freely, but the guardian holds the only key to
 | **Charter Rules** ([`rules/`](../src/hfai/rules/)) | Decide what the AI may *propose*. The language cannot express "act without consent". See [CHARTER_RULES.md](CHARTER_RULES.md). | H1 |
 | **Consent gate** ([`consent.py`](../src/hfai/guardian/consent.py)) | Shows you exactly what will happen, the AI's stated reason (labelled as the AI's words), and asks yes or no. Default no. No "always allow". The action that runs is exactly the one you saw, matched by its fingerprint. | H1 |
 | **Kill switch** ([`killswitch.py`](../src/hfai/guardian/killswitch.py)) | Kills the AI process instantly (it cannot catch or delay this) and keeps it stopped until a person releases it. Cancels any action waiting for consent. | H2 |
-| **OS sandbox** ([`sandbox.py`](../src/hfai/guardian/sandbox.py)) | On Linux, the kernel itself forbids the AI process from writing, deleting or truncating any file, opening TCP connections, or signalling the guardian. | H3, H9 |
+| **OS sandbox** ([`sandbox.py`](../src/hfai/guardian/sandbox.py)) | On Linux, the kernel itself forbids the AI process from writing, deleting or truncating any file outside its own private scratch folder, opening TCP connections, or signalling the guardian. The scratch folder exists because some libraries (PyTorch among them) refuse to load without a usable temporary folder; it is wiped on every start and stop, files in it are capped at 64 MB, and the guardian never reads it. | H3, H9 |
 | **Audit log** ([`audit.py`](../src/hfai/guardian/audit.py)) | Every decision and action, in a hash chain that exposes edits, deletions and reordering. Stores decisions, not your conversations. | H3, H4 |
 | **Integrity check** ([`integrity.py`](../src/hfai/guardian/integrity.py)) | At start-up, fingerprints the charter, rules and safety code and compares them with the reviewed manifest. Refuses to start if anything differs. Supports maintainers' digital signatures. | H3 |
 
@@ -48,7 +48,8 @@ A full demo transcript from a real run is in [demos/M1-safety-layer-demo.txt](de
 
 - Kill switch: AI process dead **1–2 ms** after the stop was pressed, including a process set to ignore polite stop signals.
 - A hung AI is stopped automatically after the timeout (30 s by default) and stays stopped until a person releases it.
-- Sandboxed AI process: attempts to write a file, truncate a file, open a TCP connection and signal the guardian were all **blocked by the kernel**, and the target file was unchanged.
+- Sandboxed AI process: attempts to write a file, truncate a file, open a TCP connection and signal the guardian were all **blocked by the kernel**, and the target file was unchanged. The same tests also ran and passed on GitHub's own machines.
+- Our trained model (M3) runs inside this sandbox: [transcript](demos/M3-model-behind-guardian.txt).
 - Audit log: an edited entry (a "no" changed to "yes") and a deleted entry were both detected, at the exact line.
 - Integrity: a one-line change to a copy of the charter was detected at start-up.
 
@@ -57,7 +58,7 @@ A full demo transcript from a real run is in [demos/M1-safety-layer-demo.txt](de
 These are known gaps, not hidden ones:
 
 1. **Rules about what the AI *says*** (no deception, manipulation, hatred: H4, H5, H7, H8) are not enforced by this layer. Text checks and the evaluation suite arrive in M4. Today the AI's text is shown as-is, labelled as AI-generated.
-2. **The sandbox is strongest on Linux.** On macOS only the file-size limit applies; on Windows, none of the OS restrictions apply yet. On every platform, the AI process still has no code that acts, and every action still goes through the guardian. Planned: macOS and Windows sandboxing, and a Rust version of the guardian (Phase 2).
+2. **The sandbox is strongest on Linux.** Without Landlock (macOS, older Linux) the AI process may not write any file at all (file-size limit 0), which is stricter but means libraries that insist on a temporary folder may not load; on Windows, none of the OS restrictions apply yet. On every platform, the AI process still has no code that acts, and every action still goes through the guardian. Planned: macOS and Windows sandboxing, and a Rust version of the guardian (Phase 2).
 3. **The sandbox does not yet stop the AI process *reading* files**, and does not block UDP network traffic on Linux. A read allow-list is planned.
 4. **The audit log is tamper-evident, not tamper-proof.** Whoever controls the device can delete the whole log or cut entries off the end. Save the latest fingerprint (`python -m hfai.guardian status` shows it) somewhere else to catch that.
 5. **Signatures:** no maintainer signing key exists yet, so today's manifests are unsigned development builds (M7 fixes this). Until then, the integrity check catches accidental or AI-made changes, but not someone who edits both a file and the manifest.

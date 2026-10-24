@@ -57,4 +57,10 @@ python -m pytest              # run all tests
 python -m hfai.charter        # check the charter and print a plain-language summary
 python -m hfai.guardian demo  # run the safety-layer demonstration
 python -m hfai.guardian integrity [--update]  # check (or, after review, record) protected files
+python -m hfai.tokenizer train|report|encode   # our tokenizer
+python -m hfai.data build|sources              # licence-tracked training data
+python -m hfai.training train|report|generate  # train our model; torchrun for several GPUs
+python notebooks/build_notebook.py            # regenerate the Kaggle notebook after editing it
 ```
+
+Training data and runs (`data/raw/`, `data/tokenized/`, `runs/`) are not committed; report cards worth keeping go in `docs/runs/`.

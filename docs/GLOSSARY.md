@@ -18,6 +18,24 @@ Terms are added here the first time the project uses them. If something is uncle
 
 **Loss.** A score for how wrong the model's guesses are. Training tries to push it down. A **falling loss curve** is the main sign that a model is learning.
 
+**Validation text.** Text deliberately kept away from training, used only to test the model. If the model does well on text it has never seen, it has learned general patterns rather than memorising.
+
+**Overfitting.** When a model memorises its training text instead of learning general patterns. The sign: training loss keeps falling while validation loss stops falling or rises. We keep the weights from the point where validation loss was lowest.
+
+**Epoch.** One full pass over the training text. Small datasets are read several times; each extra pass adds a little more risk of overfitting.
+
+**Perplexity.** e raised to the power of the loss. Roughly: how many equally likely options the model is choosing between for each next token. Lower is better.
+
+**Bits per byte.** How many bits the model would need to store each byte of text, if it were used as a compressor. It does not depend on the tokenizer, so it allows fair comparisons, including against ordinary compressors like gzip and xz.
+
+**Learning rate.** How big a nudge each training step gives the weights. Training starts with small nudges ("warm-up"), uses larger ones, then gradually reduces them.
+
+**Batch.** A group of text samples processed together in one training step.
+
+**Dropout.** Randomly switching off a fraction of the model's connections during training, so it cannot rely on memorising. It helps on small datasets.
+
+**Distributed training.** Training one model on several GPUs at once. Each GPU works on different text, and they average their updates after every step. On Kaggle we use two.
+
 **Transformer.** The design of model we use, published by researchers in 2017 and now standard. It reads a sequence of tokens and uses **attention** (each token "looking at" earlier tokens to decide what matters) to predict the next one. Using this published design is like using a known recipe; our code and weights are our own.
 
 **Inference.** Using a trained model to produce output, as opposed to training it. Much cheaper than training: a small model can run on an ordinary laptop.

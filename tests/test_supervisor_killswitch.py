@@ -120,6 +120,16 @@ def test_ai_process_cannot_write_or_truncate_files(tmp_path):
 
 
 @needs_landlock
+def test_only_the_private_scratch_folder_is_writable_and_it_is_wiped(tmp_path):
+    scratch = tmp_path / "data" / "ai-scratch"
+    supervisor, _ = start(tmp_path, "try_write", str(scratch / "note.txt"))
+    text = supervisor.ask("go").text
+    assert "write: SUCCEEDED" in text
+    supervisor.shutdown()
+    assert not scratch.exists()
+
+
+@needs_landlock
 def test_ai_process_cannot_open_tcp_connections(tmp_path):
     listener = socket.socket()
     listener.bind(("127.0.0.1", 0))
