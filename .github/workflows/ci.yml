@@ -1,0 +1,31 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install (CPU-only PyTorch for the model tests)
+        run: |
+          pip install torch numpy --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[dev]"
+      - name: Check the charter
+        run: python -m hfai.charter
+      - name: Check the safety layer's integrity
+        run: python -m hfai.guardian integrity
+      - name: Run tests
+        run: python -m pytest -v

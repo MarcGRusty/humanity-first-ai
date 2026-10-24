@@ -1,0 +1,265 @@
+# Every data source the project uses, plans to use, or has deliberately excluded.
+#
+# The test suite (tests/test_sources.py) checks this file:
+#   - every source not excluded uses an allowed open licence;
+#   - every source not excluded is human-written (no AI-generated datasets);
+#   - known AI-generated or unlicensed datasets can only appear as "excluded";
+#   - every source is documented in DATA.md.
+#
+# status:   candidate (planned, not yet downloaded) | in_use | excluded
+# verified: true only after a human or session has checked the licence and
+#           dataset ID against the source itself. Everything starts false.
+# ai_text_risk: chance the source contains some AI-generated text despite being
+#           mostly human-written: none | low | some.
+# uses:     pretraining | library (the offline, cited reference library) |
+#           instruction (teaching the model to follow requests) | speech | evaluation
+
+[policy]
+allowed_licences = [
+  "public-domain",
+  "CC0-1.0",
+  "CC-BY-4.0",
+  "CC-BY-SA-3.0",
+  "CC-BY-SA-4.0",
+  "Apache-2.0",
+  "MIT",
+  "BSD-3-Clause",
+  "Unicode-3.0",
+  # Corpora where each document carries its own licence. We keep only
+  # documents whose own licence is in this list.
+  "per-document-open",
+]
+# Datasets known to be AI-generated, or built from unlicensed web or book
+# text. They may only ever appear here with status = "excluded".
+never_allowed = [
+  "tinystories", "alpaca", "sharegpt", "ultrachat", "cosmopedia",
+  "openhermes", "fineweb", "c4", "common-crawl-raw", "the-pile",
+]
+
+[[sources]]
+id = "common-pile"
+name = "The Common Pile v0.1 (filtered Comma training set)"
+url = "https://www.eleuther.ai/papers-blog/the-common-pile-v01-an-8tb-dataset-of-public-domain-and-openly-licensed-text"
+hf_dataset = "common-pile/comma_v0.1_training_dataset"
+licence = "per-document-open"
+uses = ["pretraining"]
+languages = ["en"]
+human_written = true
+ai_text_risk = "low"
+status = "candidate"
+verified = false
+notes = "About 8 TB from 30 sources, licences checked by its authors. Mostly English. Before use (M2): confirm the dataset ID, and confirm no subset contains AI-generated text; exclude any instruction-data subset unless each part is confirmed human-written."
+
+[[sources]]
+id = "common-corpus"
+name = "Common Corpus (Pleias)"
+url = "https://huggingface.co/datasets/PleIAs/common_corpus"
+hf_dataset = "PleIAs/common_corpus"
+licence = "per-document-open"
+uses = ["pretraining"]
+languages = ["en", "fr", "de", "es", "it", "pt", "nl", "and more (30+ with at least 1B tokens)"]
+human_written = true
+ai_text_risk = "low"
+status = "candidate"
+verified = false
+notes = "About 2 trillion tokens of public-domain and permissively licensed text. Over half predates the 21st century, so it carries historical attitudes and biases; we measure this. Keep only documents whose own licence is allowed."
+
+[[sources]]
+id = "wikipedia"
+name = "Wikipedia, all languages"
+url = "https://dumps.wikimedia.org/"
+hf_dataset = "wikimedia/wikipedia"
+licence = "CC-BY-SA-4.0"
+uses = ["pretraining", "library"]
+languages = ["300+ language editions"]
+human_written = true
+ai_text_risk = "low"
+status = "candidate"
+verified = false
+notes = "Main source of multilingual text and of the offline reference library. Share-alike licence: one reason the weights use CC BY-SA 4.0. Recent edits may include some AI-written text."
+
+[[sources]]
+id = "openstax"
+name = "OpenStax textbooks"
+url = "https://openstax.org/"
+licence = "CC-BY-4.0"
+uses = ["library", "pretraining"]
+languages = ["en", "es", "pl"]
+human_written = true
+ai_text_risk = "none"
+status = "candidate"
+verified = false
+notes = "Peer-reviewed open textbooks. Check each book's licence individually; use only books licensed CC BY 4.0."
+
+[[sources]]
+id = "wikibooks-wikivoyage"
+name = "Wikibooks and Wikivoyage"
+url = "https://dumps.wikimedia.org/"
+licence = "CC-BY-SA-4.0"
+uses = ["library"]
+languages = ["many"]
+human_written = true
+ai_text_risk = "low"
+status = "candidate"
+verified = false
+notes = "Practical how-to and travel and culture knowledge for the offline library."
+
+[[sources]]
+id = "oasst2"
+name = "OpenAssistant Conversations 2 (OASST2)"
+url = "https://huggingface.co/datasets/OpenAssistant/oasst2"
+hf_dataset = "OpenAssistant/oasst2"
+licence = "Apache-2.0"
+uses = ["instruction"]
+languages = ["en", "es", "ru", "de", "zh", "fr", "and others"]
+human_written = true
+ai_text_risk = "some"
+status = "candidate"
+verified = false
+notes = "Conversations written and rated by human volunteers. Some volunteers may have pasted chatbot output; we filter for tell-tale phrases and document what remains. Used only for instruction tuning of OUR model."
+
+[[sources]]
+id = "dolly-15k"
+name = "databricks-dolly-15k"
+url = "https://huggingface.co/datasets/databricks/databricks-dolly-15k"
+hf_dataset = "databricks/databricks-dolly-15k"
+licence = "CC-BY-SA-3.0"
+uses = ["instruction"]
+languages = ["en"]
+human_written = true
+ai_text_risk = "some"
+status = "candidate"
+verified = false
+notes = "About 15,000 instruction and answer pairs written by employees. Same caution about pasted chatbot text as OASST2."
+
+[[sources]]
+id = "common-voice"
+name = "Mozilla Common Voice"
+url = "https://commonvoice.mozilla.org/"
+licence = "CC0-1.0"
+uses = ["speech"]
+languages = ["100+"]
+human_written = true
+ai_text_risk = "none"
+status = "candidate"
+verified = false
+notes = "Recorded human voices in many languages. For a future speech-recognition model built from scratch (Phase 3). Not used in Phase 1."
+
+[[sources]]
+id = "nltk-gutenberg"
+name = "NLTK Project Gutenberg selection (15 public-domain books)"
+url = "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/gutenberg.zip"
+licence = "public-domain"
+uses = ["pretraining"]
+languages = ["en"]
+human_written = true
+ai_text_risk = "none"
+status = "in_use"
+verified = true
+notes = "Used only for the small CPU proof run (M3). About 7 MB of English: Austen, Blake, Carroll, Chesterton, Edgeworth, Melville, Milton, Shakespeare, Whitman. Archive fingerprint pinned in src/hfai/data/sources.py. Left out: Burgess and Bryant (authors died 1965 and 1967, so still in copyright where copyright lasts 70 years after death) and the King James Bible (Crown rights in the UK, and one religion's scripture on its own would skew the data). 17th to 19th century writing: carries the attitudes and biases of its time."
+
+[[sources]]
+id = "unicode-cldr"
+name = "Unicode CLDR locale data (via the Babel package)"
+url = "https://cldr.unicode.org/"
+licence = "Unicode-3.0"
+uses = ["pretraining", "evaluation"]
+languages = ["about 700 locales"]
+human_written = true
+ai_text_risk = "none"
+status = "in_use"
+verified = true
+notes = "Everyday words written by CLDR's human contributors in each language: names of languages, countries, scripts, months and days. Word lists, not running text. Names of languages and territories are used to train tokenizers; names of scripts, months and days are held out to measure language coverage."
+
+# --- Deliberately excluded ------------------------------------------------
+
+[[sources]]
+id = "fineweb"
+name = "FineWeb, C4 and raw Common Crawl web text"
+url = "https://commoncrawl.org/"
+licence = "none"
+uses = []
+languages = ["many"]
+human_written = true
+ai_text_risk = "some"
+status = "excluded"
+verified = true
+reason = "Web pages copied without the authors' permission. The dataset's own licence covers the collection, not the copyrighted pages inside it."
+
+[[sources]]
+id = "the-pile"
+name = "The Pile (2020)"
+url = "https://pile.eleuther.ai/"
+licence = "none"
+uses = []
+languages = ["en"]
+human_written = true
+ai_text_risk = "none"
+status = "excluded"
+verified = true
+reason = "Includes Books3, a collection of copyrighted books used without permission."
+
+[[sources]]
+id = "tinystories"
+name = "TinyStories"
+url = "https://arxiv.org/abs/2305.07759"
+licence = "CDLA-Sharing-1.0"
+uses = []
+languages = ["en"]
+human_written = false
+ai_text_risk = "some"
+status = "excluded"
+verified = true
+reason = "Written by GPT-3.5 and GPT-4. Training on it would copy an existing AI, breaking promise P3."
+
+[[sources]]
+id = "alpaca"
+name = "Alpaca, ShareGPT, UltraChat, Cosmopedia, OpenHermes and similar"
+url = "https://github.com/tatsu-lab/stanford_alpaca"
+licence = "various"
+uses = []
+languages = ["en"]
+human_written = false
+ai_text_risk = "some"
+status = "excluded"
+verified = true
+reason = "Generated by existing AI models. Training on them would copy those models, breaking promise P3."
+
+[[sources]]
+id = "who-fao-nc"
+name = "WHO and FAO publications licensed CC BY-NC-SA 3.0 IGO"
+url = "https://www.who.int/about/policies/publishing/copyright"
+licence = "CC-BY-NC-SA-3.0-IGO"
+uses = []
+languages = ["many"]
+human_written = true
+ai_text_risk = "none"
+status = "excluded"
+verified = false
+reason = "Valuable health and farming knowledge, but the non-commercial (NC) licence is incompatible with the project's open licences. The app may link to these resources; it does not copy them."
+
+[[sources]]
+id = "udhr-translations"
+name = "Universal Declaration of Human Rights translations"
+url = "https://www.ohchr.org/en/human-rights/universal-declaration/universal-declaration-human-rights/about-universal-declaration-human-rights-translation-project"
+licence = "free-distribution-only"
+uses = []
+languages = ["500+"]
+human_written = true
+ai_text_risk = "none"
+status = "excluded"
+verified = false
+reason = "An ideal multilingual test text, but the UN's published terms allow copying for free distribution only, which is narrower than the project's open licences. Revisit if a clearly open licence is confirmed."
+
+[[sources]]
+id = "indigenous-without-consent"
+name = "Indigenous-language text gathered without community consent"
+url = "https://www.gida-global.org/care"
+licence = "any"
+uses = []
+languages = ["many"]
+human_written = true
+ai_text_risk = "none"
+status = "excluded"
+verified = true
+reason = "Following the CARE principles for Indigenous data governance, we use Indigenous-language data only with the consent and involvement of the community, even when its licence would allow use."

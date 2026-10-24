@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+build/
+dist/
+
+# Data, checkpoints and run outputs are never committed (too large; and data
+# must be re-downloadable from its documented, licensed source instead).
+data/raw/
+data/cache/
+data/tokenized/
+/checkpoints/
+/runs/
+*.pt
+*.safetensors
+*.bin
+
+# Local user data from the app (private by design)
+user_data/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

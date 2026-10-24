@@ -1,0 +1,25 @@
+{
+  "stop_reason": "finished",
+  "step": 3000,
+  "max_steps": 3000,
+  "parameters": 3344064,
+  "model_config": {
+    "vocab_size": 8192,
+    "d_model": 192,
+    "n_layers": 4,
+    "n_heads": 3,
+    "max_seq_len": 256,
+    "ffn_multiple": 64,
+    "dropout": 0.1,
+    "rope_base": 10000.0
+  },
+  "tokens_seen": 12288000,
+  "elapsed_s": 1871.7,
+  "watt_hours": 20.797,
+  "energy_method": "ESTIMATE assuming 40 W average draw (not measured)",
+  "device": "cpu",
+  "world_size": 1,
+  "precision": "torch.float32",
+  "best_val_loss": 3.8637474934350977,
+  "tokenizer_fingerprint": "1ceb95c37c541ec06cd667e9ebc3f6a1f4578efa29de77fbed322a893dc8e504"
+}

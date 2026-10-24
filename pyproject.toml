@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hfai"
+version = "0.0.1"
+description = "Humanity-First AI (working name): an original, charter-governed, local-first AI built from scratch."
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.11"
+# The core (charter, guardian, rules) deliberately needs nothing outside the
+# Python standard library apart from `cryptography` for signatures.
+dependencies = ["cryptography>=42"]
+
+[project.optional-dependencies]
+# Model training and inference.
+train = ["torch>=2.4", "numpy>=1.26"]
+dev = ["pytest>=8", "babel>=2.12"]
+# Unicode CLDR word lists (language coverage), used by the data pipeline.
+data = ["babel>=2.12"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
